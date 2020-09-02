@@ -16,7 +16,6 @@ public class GcpAxonServerConnectionFactory extends AxonServerConnectionFactory 
     private static class WorkloadIdentityAuthInterceptor implements ClientInterceptor {
         private static final Logger LOG = LoggerFactory.getLogger(WorkloadIdentityAuthInterceptor.class);
 
-
         private final CallCredentials creds;
 
         public WorkloadIdentityAuthInterceptor() throws IOException {
@@ -29,9 +28,7 @@ public class GcpAxonServerConnectionFactory extends AxonServerConnectionFactory 
 
         @Override
         public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> methodDescriptor, CallOptions callOptions, Channel channel) {
-            callOptions.withCallCredentials(creds);
-
-            return channel.newCall(methodDescriptor, callOptions);
+            return channel.newCall(methodDescriptor, callOptions.withCallCredentials(creds));
         }
     }
 
@@ -39,7 +36,9 @@ public class GcpAxonServerConnectionFactory extends AxonServerConnectionFactory 
         super(
                 builder.customize(managedChannelBuilder -> {
                     try {
-                        return managedChannelBuilder.intercept(new WorkloadIdentityAuthInterceptor());
+                        return managedChannelBuilder.intercept(
+                                new WorkloadIdentityAuthInterceptor()
+                        );
                     } catch (IOException e) {
                         throw Throwables.propagate(e);
                     }
